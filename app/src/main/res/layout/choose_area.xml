@@ -4,6 +4,8 @@
     android:orientation="vertical"
     android:background="#fff"
     android:layout_height="match_parent">
+    <!--头布局作为标题栏-->
+    <!--碎片中最好不适用actionbar或toolbar-->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="?attr/colorPrimary">
@@ -23,6 +25,8 @@
             android:layout_marginLeft="10dp"
             android:layout_height="25dp" />
     </RelativeLayout>
+
+    <!--显示省市县数据-->
     <ListView
         android:id="@+id/list_view"
         android:layout_width="match_parent"

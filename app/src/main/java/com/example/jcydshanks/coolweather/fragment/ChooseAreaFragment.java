@@ -1,4 +1,4 @@
-package com.example.jcydshanks.coolweather;
+package com.example.jcydshanks.coolweather.fragment;
 
 import android.app.Fragment;
 import android.app.ProgressDialog;
@@ -13,30 +13,39 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.example.jcydshanks.coolweather.R;
 import com.example.jcydshanks.coolweather.db.City;
 import com.example.jcydshanks.coolweather.db.County;
 import com.example.jcydshanks.coolweather.db.Province;
+import com.example.jcydshanks.coolweather.util.HttpUtil;
+import com.example.jcydshanks.coolweather.util.Utility;
 
 import org.litepal.crud.DataSupport;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
 
 /**
  * Created by JcyDS on 2018/4/15.
  */
 
 public class ChooseAreaFragment extends Fragment {
-    public static final int LEVEL_PROVINCE=0;
-    public static final int LEVEL_CITY=1;
-    public static final int LEVEL_COUNTY=2;
-    private ProgressDialog progressDialog;
-    private TextView titleText;
-    private Button backButton;
-    private ListView listView;
-    private ArrayAdapter<String> adapter;
-    private List<String> dataList=new ArrayList<>();
+    public static final int LEVEL_PROVINCE=0;   //省级
+    public static final int LEVEL_CITY=1;       //市级
+    public static final int LEVEL_COUNTY=2;     //县级
+    private ProgressDialog progressDialog;      //进度对话框
+    private TextView titleText;                 //标题文字
+    private Button backButton;                  //返回按钮
+    private ListView listView;                  //列表
+    private ArrayAdapter<String> adapter;       //适配器数组
+    private List<String> dataList=new ArrayList<>();    //数据队列
     /**
     *省市县列表
     */
@@ -51,6 +60,13 @@ public class ChooseAreaFragment extends Fragment {
     private int currentLevel;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
+
+    /**
+     * 获取控件的实例
+     * 初始化adapter并设置为listview的适配器
+     * 返回一个view
+     **/
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view=inflater.inflate(R.layout.choose_area,container,false);
@@ -61,6 +77,11 @@ public class ChooseAreaFragment extends Fragment {
         listView.setAdapter(adapter);
         return view;
     }
+    /**
+     * 设置listview的item点击事件
+     * 设置返回键的点击事件
+     * 开始加载省级数据
+     **/
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
@@ -149,6 +170,63 @@ public class ChooseAreaFragment extends Fragment {
     }
 
     private void queryFromServer(String address,final String type) {
+        showProgressDialog();
+        HttpUtil.sendOkHttpRequest(address, new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                //通过runOnUiThread()方法回到主线程处理逻辑
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        closeProgressDialog();
+                        Toast.makeText(getContext(),"加载失败",Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
 
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                String responseText=response.body().string();
+                boolean result=false;
+                if ("province".equals(type)){
+                    result= Utility.handleProvinceResponse(responseText);
+                }else if ("city".equals(type)){
+                    result=Utility.handleCityResponse(responseText,selectedProvince.getId());
+                }else if ("county".equals(type)){
+                    result=Utility.handleCountyResponse(responseText,selectedCity.getId());
+                }
+
+                if (result){
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            closeProgressDialog();
+                            if ("province".equals(type)){
+                                queryProvinces();
+                            }else if ("city".equals(type)){
+                                queryCities();
+                            }else if ("county".equals(type)){
+                                queryCounties();
+                            }
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    private void showProgressDialog() {
+        if (progressDialog==null){
+            progressDialog=new ProgressDialog(getActivity());
+            progressDialog.setMessage("加载中...");
+            progressDialog.setCanceledOnTouchOutside(false);
+        }
+        progressDialog.show();
+    }
+
+    private void closeProgressDialog(){
+        if (progressDialog!=null){
+            progressDialog.dismiss();
+        }
     }
 }
