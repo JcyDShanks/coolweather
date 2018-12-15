@@ -16,6 +16,7 @@ import com.example.jcydshanks.coolweather.gson.Forecast;
 import com.example.jcydshanks.coolweather.gson.Weather;
 import com.example.jcydshanks.coolweather.util.HttpUtil;
 import com.example.jcydshanks.coolweather.util.Utility;
+import com.gyf.barlibrary.ImmersionBar;
 
 import java.io.IOException;
 
@@ -42,6 +43,7 @@ public class WeatherActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_weather);
+        ImmersionBar.with(this).init();
         initView();
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
@@ -57,7 +59,7 @@ public class WeatherActivity extends AppCompatActivity {
 
     private void requestWeather(final String weatherId) {
         String weatherUrl = "http://guolin.tech/api/weather?cityid="+
-                weatherId+"&key=bc0418b57b2d4918819d3974ac1285d9";
+                weatherId+"&key=8bc762c281584a14b1dbdbaf8fc08ff1";
         HttpUtil.sendOkHttpRequest(weatherUrl, new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
@@ -91,6 +93,12 @@ public class WeatherActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        ImmersionBar.with(this).destroy();
+    }
+
     private void showWeatherInfo(Weather weather) {
         String cityName = weather.basic.cityName;
         String updateTime = weather.basic.update.updateTime.split(" ")[1];
@@ -103,10 +111,10 @@ public class WeatherActivity extends AppCompatActivity {
         forecastLayout.removeAllViews();
         for (Forecast forecast:weather.forecastList){
             View view = LayoutInflater.from(this).inflate(R.layout.forecast_item,forecastLayout,false);
-            TextView dateText=findViewById(R.id.date_text);
-            TextView infoText=findViewById(R.id.info_text);
-            TextView maxText=findViewById(R.id.max_text);
-            TextView minText=findViewById(R.id.min_text);
+            TextView dateText=view.findViewById(R.id.date_text);
+            TextView infoText=view.findViewById(R.id.info_text);
+            TextView maxText=view.findViewById(R.id.max_text);
+            TextView minText=view.findViewById(R.id.min_text);
             dateText.setText(forecast.date);
             infoText.setText(forecast.more.info);
             maxText.setText(forecast.temperature.max);
